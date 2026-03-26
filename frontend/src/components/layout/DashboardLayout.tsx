@@ -149,7 +149,7 @@ export default function DashboardLayout() {
           onClick={() => setCollapsed(!collapsed)}
           className="absolute top-1/2 -right-3 w-6 h-6 rounded-full flex items-center justify-center z-10"
           style={{
-            background: 'var(--bg-card)',
+            background: 'var(--bg-toogle)',
             border: '1px solid var(--border)',
             boxShadow: 'var(--shadow-sm)',
             transform: 'translateY(-50%)',
@@ -194,14 +194,8 @@ export default function DashboardLayout() {
               <button
                 onClick={() => setProfileOpen(!profileOpen)}
                 className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
-                style={{ background: 'var(--bg-input)' }}
               >
                 <div className="avatar avatar-sm text-xs">{user?.name?.charAt(0)?.toUpperCase() ?? 'U'}</div>
-                <div className="text-left hidden lg:block">
-                  <p className="text-sm font-medium text-primary leading-tight">{user?.name}</p>
-                  <p className="text-xs text-tertiary leading-tight">{user?.username}</p>
-                </div>
-                <span className="material-symbols-rounded" style={{ fontSize: '16px', color: 'var(--text-tertiary)' }}>expand_more</span>
               </button>
 
               {/* Profile Dropdown */}
