@@ -5,7 +5,7 @@ import { useThemeStore } from '../../stores/themeStore';
 import { useLogout } from '../../hooks/useAuth';
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { to: '/dashboard', label: 'Dashboard', icon: 'dashboard_customize' },
   { to: '/inbox', label: 'Inbox', icon: 'chat' },
   { to: '/contacts', label: 'Contacts', icon: 'contacts' },
   { to: '/campaigns', label: 'Campaigns', icon: 'campaign' },
