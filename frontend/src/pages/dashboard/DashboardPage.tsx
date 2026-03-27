@@ -5,6 +5,10 @@ const stats = [
   { label: 'Contacts', value: '—', icon: 'contacts', gradient: 'stat-blue' },
   { label: 'Campaigns', value: '—', icon: 'campaign', gradient: 'stat-purple' },
   { label: 'AI Agents', value: '—', icon: 'smart_toy', gradient: 'stat-pink' },
+  { label: 'Masters', icon: 'database', children: [
+    { label: 'Users', path: '/masters/users', icon: 'group' },
+    
+  ]},
 ];
 
 const quickActions = [

@@ -13,9 +13,17 @@ const navItems = [
   { to: '/settings', label: 'Settings', icon: 'settings' },
 ];
 
+const mastersItems = [
+  { to: '/masters/users', label: 'Users', icon: 'group' },
+  { to: '/masters/organizations', label: 'Organizations', icon: 'corporate_fare' },
+  { to: '/masters/access-requests', label: 'Access Requests', icon: 'how_to_reg' },
+  { to: '/masters/wa-channels', label: 'WA Channels', icon: 'phone_android' },
+];
+
 export default function DashboardLayout() {
   const user = useAuthStore((s) => s.user);
   const org = useAuthStore((s) => s.org);
+  const role = useAuthStore((s) => s.role);
   const department = useAuthStore((s) => s.department);
   const { theme, toggleTheme } = useThemeStore();
   const { mutate: logout } = useLogout();
@@ -35,7 +43,10 @@ export default function DashboardLayout() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const currentPageLabel = navItems.find(n => location.pathname.startsWith(n.to))?.label ?? 'Dashboard';
+  const allItems = [...navItems, ...mastersItems];
+  const currentPageLabel = allItems.find(n => location.pathname.startsWith(n.to))?.label ?? 'Dashboard';
+
+  const isSuperAdmin = role === 'superadmin';
 
   const sidebarContent = (
     <div className="flex-1 flex flex-col">
@@ -64,6 +75,38 @@ export default function DashboardLayout() {
             )}
           </NavLink>
         ))}
+
+        {/* Masters — Superadmin Only */}
+        {isSuperAdmin && (
+          <>
+            <div
+              className={collapsed ? 'py-3' : 'py-3 px-3'}
+              style={{
+                fontSize: collapsed ? 0 : 11,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                color: 'var(--text-tertiary)',
+              }}
+            >
+              {collapsed ? (
+                <div style={{ height: '1px', background: 'var(--border)', margin: '0 4px' }} />
+              ) : (
+                'Masters'
+              )}
+            </div>
+            {mastersItems.map((item) => (
+              <NavLink key={item.to} to={item.to}>
+                {({ isActive }) => (
+                  <div className={`nav-item ${isActive ? 'active' : ''} ${collapsed ? 'justify-center' : ''}`}>
+                    <span className="material-symbols-rounded" style={{ fontSize: '20px' }}>{item.icon}</span>
+                    {!collapsed && <span>{item.label}</span>}
+                  </div>
+                )}
+              </NavLink>
+            ))}
+          </>
+        )}
       </nav>
     </div>
   );

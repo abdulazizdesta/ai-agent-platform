@@ -5,6 +5,7 @@ import DashboardLayout from './components/layout/DashboardLayout';
 import LoginPage from '././pages/auth/LoginPage';
 import RegisterPage from '././pages/auth/RegisterPage';
 import DashboardPage from '././pages/dashboard/DashboardPage';
+import UsersPage from './pages/masters/users/UsersPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +35,11 @@ export default function App() {
               <Route path="/campaigns" element={<Placeholder title="Campaigns" icon="campaign" />} />
               <Route path="/agents" element={<Placeholder title="AI Agents" icon="smart_toy" />} />
               <Route path="/settings" element={<Placeholder title="Settings" icon="settings" />} />
+
+              {/* Masters — superadmin only */}
+              <Route element={<ProtectedRoute minRole="superadmin" />}>
+                <Route path="/masters/users" element={<UsersPage />} />
+              </Route>
             </Route>
           </Route>
 
