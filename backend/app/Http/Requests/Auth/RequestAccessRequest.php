@@ -18,7 +18,7 @@ class RequestAccessRequest extends FormRequest
             'username'        => ['required', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],
             'employee_id'     => ['required', 'string', 'max:50', 'unique:users,employee_id'],
             'phone'           => ['nullable', 'string', 'max:20'],
-            'email'           => ['nullable', 'email', 'max:255'],
+            'email'           => ['nullable', 'email', 'max:255', 'unique:users,email'],
             'password'        => ['required', 'string', 'min:8', 'confirmed'],
             'organization_id' => ['required', 'exists:organizations,id'],
             'department_id'   => ['nullable', 'exists:departments,id'],

@@ -4,7 +4,7 @@ import api from '../../services/api';
 
 // ─── Constants ───────────────────────────────────────────
 const ALL_STATUSES = ['pending', 'approved', 'rejected', 'expired'];
-const ASSIGNABLE_ROLES = ['admin', 'agent', 'viewer'];
+const ASSIGNABLE_ROLES = ['admin', 'agent', 'viewer', 'superadmin'];
 
 // ─── Types ───────────────────────────────────────────────
 interface AccessRequestData {

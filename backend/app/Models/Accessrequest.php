@@ -19,6 +19,7 @@ class AccessRequest extends Model
         'password',
         'organization_id',
         'department_id',
+        'city',
         'status',
         'assigned_role',
         'reviewed_by',
@@ -40,9 +41,7 @@ class AccessRequest extends Model
         ];
     }
 
-    // ──────────────────────────────────────────
-    // Relationships
-    // ──────────────────────────────────────────
+    // ── Relationships ────────────────────────────────
 
     public function organization(): BelongsTo
     {
@@ -59,9 +58,7 @@ class AccessRequest extends Model
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
-    // ──────────────────────────────────────────
-    // Scopes
-    // ──────────────────────────────────────────
+    // ── Scopes ───────────────────────────────────────
 
     public function scopePending($query)
     {
@@ -76,21 +73,13 @@ class AccessRequest extends Model
         });
     }
 
-    // ──────────────────────────────────────────
-    // Helpers
-    // ──────────────────────────────────────────
+    // ── Helpers ──────────────────────────────────────
 
-    /**
-     * Check if request has expired.
-     */
     public function isExpired(): bool
     {
         return $this->expires_at && $this->expires_at->isPast();
     }
 
-    /**
-     * Check if request is still pending and valid.
-     */
     public function isPending(): bool
     {
         return $this->status === 'pending' && !$this->isExpired();
@@ -101,7 +90,6 @@ class AccessRequest extends Model
      */
     public function approve(User $reviewer, string $role = 'viewer'): User
     {
-        // Update request status
         $this->update([
             'status'        => 'approved',
             'assigned_role' => $role,
@@ -109,16 +97,16 @@ class AccessRequest extends Model
             'reviewed_at'   => now(),
         ]);
 
-        // Create user account from request data
         return User::create([
             'name'            => $this->name,
             'username'        => $this->username,
             'employee_id'     => $this->employee_id,
             'phone'           => $this->phone,
             'email'           => $this->email,
-            'password'        => $this->getRawOriginal('password'), // already hashed
+            'password'        => $this->getRawOriginal('password'),
             'organization_id' => $this->organization_id,
             'department_id'   => $this->department_id,
+            'city'            => $this->city,
             'role'            => $role,
             'status'          => 'approved',
         ]);

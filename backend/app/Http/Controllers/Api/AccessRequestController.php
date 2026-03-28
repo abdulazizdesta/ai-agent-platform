@@ -96,7 +96,7 @@ class AccessRequestController extends Controller
         }
 
         $validated = $request->validate([
-            'assigned_role' => ['required', Rule::in(['admin', 'agent', 'viewer'])],
+            'assigned_role' => ['required', Rule::in(['admin', 'agent', 'viewer', 'superadmin'])],
         ]);
 
         $reviewer = $request->user();

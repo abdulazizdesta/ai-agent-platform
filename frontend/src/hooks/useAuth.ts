@@ -22,6 +22,7 @@ interface RequestAccessPayload {
   password_confirmation: string;
   organization_id: number;
   department_id?: number;
+  city?: string;
 }
 
 // ──────────────────────────────────────────

@@ -56,11 +56,16 @@ class AuthController extends Controller
     {
         $existingUser = User::where('username', $request->username)
             ->orWhere('employee_id', $request->employee_id)
+            ->orWhere(function ($q) use ($request) {
+                if ($request->email) {
+                    $q->where('email', $request->email);
+                }
+            })
             ->first();
 
         if ($existingUser) {
             return response()->json([
-                'message' => 'Username atau Employee ID sudah terdaftar.',
+                'message' => 'Username, Employee ID, atau email sudah terdaftar.',
             ], 422);
         }
 
