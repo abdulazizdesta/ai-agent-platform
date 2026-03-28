@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\WaChannelController;
+use App\Http\Controllers\Api\AccessRequestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -50,6 +51,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('wa-channels', WaChannelController::class);
         Route::post('/wa-channels/{wa_channel}/re-verify', [WaChannelController::class, 'reVerify']);
         Route::post('/wa-channels/{wa_channel}/update-credentials', [WaChannelController::class, 'updateCredentials']);
+
+        // Access Requests
+        Route::get('/access-requests', [AccessRequestController::class, 'index']);
+        Route::get('/access-requests/{access_request}', [AccessRequestController::class, 'show']);
+        Route::post('/access-requests/{access_request}/approve', [AccessRequestController::class, 'approve']);
+        Route::post('/access-requests/{access_request}/reject', [AccessRequestController::class, 'reject']);
+        Route::delete('/access-requests/{access_request}', [AccessRequestController::class, 'destroy']);
 
     });
 
