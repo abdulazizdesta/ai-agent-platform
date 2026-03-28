@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\AccessRequestController;
 use App\Http\Controllers\Api\AgentController;
 use App\Http\Controllers\Api\AgentFaqController;
 use App\Http\Controllers\Api\AgentDocumentController;
+use App\Http\Controllers\Api\AgentChatController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -97,6 +98,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/agents/{agent}/documents', [AgentDocumentController::class, 'store']);
         Route::post('/agents/{agent}/documents/{document}/reprocess', [AgentDocumentController::class, 'reprocess']);
         Route::delete('/agents/{agent}/documents/{document}', [AgentDocumentController::class, 'destroy']);
+
+        // Agent Chat (Sandbox)
+        Route::post('/agents/{agent}/chat', [AgentChatController::class, 'chat']);
+        Route::get('/agents/{agent}/conversations', [AgentChatController::class, 'conversations']);
+        Route::get('/agents/{agent}/conversations/{conversation}/messages', [AgentChatController::class, 'messages']);
+        Route::delete('/agents/{agent}/conversations/{conversation}', [AgentChatController::class, 'destroyConversation']);
 
     });
 

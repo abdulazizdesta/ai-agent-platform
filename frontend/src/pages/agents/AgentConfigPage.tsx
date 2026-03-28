@@ -20,10 +20,21 @@ interface WaChannelLookup { id: number; phone_number: string; display_name: stri
 interface ToastData { id: number; type: 'success' | 'error' | 'warning'; message: string; }
 let toastId = 0;
 
-const MODELS = [
-  { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4' },
-  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
+const PROVIDERS = [
+  { value: 'anthropic', label: 'Anthropic (Claude)', icon: '🟣' },
+  { value: 'gemini', label: 'Google (Gemini)', icon: '🔵' },
 ];
+ 
+const MODELS_BY_PROVIDER: Record<string, { value: string; label: string; free: boolean }[]> = {
+  anthropic: [
+    { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4', free: false },
+    { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', free: false },
+  ],
+  gemini: [
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', free: true },
+    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', free: false },
+  ],
+};
 
 function ToastContainer({ toasts, onRemove }: { toasts: ToastData[]; onRemove: (id: number) => void }) {
   return (<div className="cm-toast-container">{toasts.map((t) => (
@@ -132,6 +143,7 @@ export default function AgentConfigPage() {
 function ConfigTab({ agent, waChannels, addToast }: { agent: AgentData; waChannels: WaChannelLookup[]; addToast: (t: 'success' | 'error', m: string) => void }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
+    model_provider: agent.model_provider || 'gemini',
     name: agent.name, type: agent.type, description: agent.description || '',
     personality: agent.personality || '', instructions: agent.instructions || '',
     model_name: agent.model_name, temperature: agent.temperature, max_tokens: agent.max_tokens,
@@ -139,13 +151,13 @@ function ConfigTab({ agent, waChannels, addToast }: { agent: AgentData; waChanne
     capabilities: agent.capabilities || { chat: true, auto_reply: false },
     status: agent.status,
   });
-
+ 
   const updateAgent = useMutation({
     mutationFn: (p: Record<string, unknown>) => api.put(`/agents/${agent.id}`, p),
     onSuccess: (r) => { queryClient.invalidateQueries({ queryKey: ['agent', String(agent.id)] }); addToast('success', r.data.message); },
     onError: (e: any) => addToast('error', e.response?.data?.message || 'Gagal menyimpan.'),
   });
-
+ 
   const handleSave = () => {
     updateAgent.mutate({
       ...form,
@@ -155,7 +167,7 @@ function ConfigTab({ agent, waChannels, addToast }: { agent: AgentData; waChanne
       wa_channel_id: form.wa_channel_id ? Number(form.wa_channel_id) : null,
     });
   };
-
+ 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
       {/* Left Column */}
@@ -191,7 +203,7 @@ function ConfigTab({ agent, waChannels, addToast }: { agent: AgentData; waChanne
             </FormField>
           </div>
         </Section>
-
+ 
         {/* Capabilities */}
         <Section title="Capabilities" icon="toggle_on">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -212,15 +224,39 @@ function ConfigTab({ agent, waChannels, addToast }: { agent: AgentData; waChanne
           </div>
         </Section>
       </div>
-
+ 
       {/* Right Column */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        {/* Model Config */}
+        {/* Model Config — WITH PROVIDER SELECTOR */}
         <Section title="Model AI" icon="psychology">
+          {/* Provider Toggle */}
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>Provider</label>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {PROVIDERS.map((p) => (
+                <button key={p.value}
+                  onClick={() => {
+                    const firstModel = MODELS_BY_PROVIDER[p.value]?.[0]?.value || '';
+                    setForm((f) => ({ ...f, model_provider: p.value, model_name: firstModel }));
+                  }}
+                  className={`cm-btn ${form.model_provider === p.value ? 'cm-btn-primary' : 'cm-btn-ghost'}`}
+                  style={{ flex: 1, justifyContent: 'center', fontSize: 13 }}>
+                  <span style={{ fontSize: 14 }}>{p.icon}</span> {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+ 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <FormField label="Model" span={2}>
-              <select value={form.model_name} onChange={(e) => setForm((f) => ({ ...f, model_name: e.target.value }))} className="cm-modal-input">
-                {MODELS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+              <select value={form.model_name}
+                onChange={(e) => setForm((f) => ({ ...f, model_name: e.target.value }))}
+                className="cm-modal-input">
+                {(MODELS_BY_PROVIDER[form.model_provider] || []).map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}{m.free ? ' (FREE)' : ''}
+                  </option>
+                ))}
               </select>
             </FormField>
             <FormField label={`Temperature: ${form.temperature}`}>
@@ -233,21 +269,35 @@ function ConfigTab({ agent, waChannels, addToast }: { agent: AgentData; waChanne
                 onChange={(e) => setForm((f) => ({ ...f, max_tokens: parseInt(e.target.value) || 1024 }))} className="cm-modal-input" />
             </FormField>
           </div>
+ 
+          {/* Free tier hint */}
+          {form.model_provider === 'gemini' && (
+            <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 8, backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', fontSize: 12, color: 'var(--text-secondary)' }}>
+              <span style={{ fontWeight: 600, color: 'rgb(16,185,129)' }}>💡 Free Tier:</span> Gemini 2.5 Flash gratis tanpa kartu kredit. Dapetin API key di{' '}
+              <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>aistudio.google.com/apikey</a>
+            </div>
+          )}
+          {form.model_provider === 'anthropic' && (
+            <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 8, backgroundColor: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', fontSize: 12, color: 'var(--text-secondary)' }}>
+              <span style={{ fontWeight: 600, color: 'rgb(139,92,246)' }}>🔑 Paid:</span> Anthropic butuh credit ($5 min). Dapetin API key di{' '}
+              <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>console.anthropic.com</a>
+            </div>
+          )}
         </Section>
-
+ 
         {/* Personality */}
         <Section title="Personality" icon="emoji_emotions">
           <textarea value={form.personality} onChange={(e) => setForm((f) => ({ ...f, personality: e.target.value }))} className="cm-modal-input" rows={4} style={{ resize: 'vertical' }}
             placeholder="Professional tapi tetap friendly, berbahasa Indonesia, selalu sapa customer dengan nama..." />
         </Section>
-
+ 
         {/* Instructions */}
         <Section title="Instructions & Rules" icon="rule">
           <textarea value={form.instructions} onChange={(e) => setForm((f) => ({ ...f, instructions: e.target.value }))} className="cm-modal-input" rows={4} style={{ resize: 'vertical' }}
             placeholder="Jangan pernah kasih diskon tanpa approval manager. Fokus utama: customer service..." />
         </Section>
       </div>
-
+ 
       {/* Save Button — full width */}
       <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'flex-end', paddingTop: 12, borderTop: '1px solid var(--border)' }}>
         <button onClick={handleSave} disabled={updateAgent.isPending} className="cm-btn cm-btn-primary" style={{ padding: '10px 32px' }}>
@@ -405,13 +455,22 @@ function KnowledgeTab({ agent, stats, addToast }: { agent: AgentData; stats: Kno
 // ═══════════════════════════════════════════════════════════
 // CHAT TAB (Sandbox Preview)
 // ═══════════════════════════════════════════════════════════
+
 function ChatTab({ agent, addToast }: { agent: AgentData; addToast: (t: 'success' | 'error' | 'warning', m: string) => void }) {
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const [messages, setMessages] = useState<{ role: string; content: string; tokens?: number }[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [conversationId, setConversationId] = useState<number | null>(null);
+  const [sources, setSources] = useState<{ type: string; count: number }[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  const clearChat = () => {
+    setMessages([]);
+    setConversationId(null);
+    setSources([]);
+  };
 
   const sendMessage = async () => {
     if (!input.trim() || isTyping) return;
@@ -420,19 +479,31 @@ function ChatTab({ agent, addToast }: { agent: AgentData; addToast: (t: 'success
     setInput('');
     setMessages((prev) => [...prev, { role: 'user', content: userMsg }]);
     setIsTyping(true);
+    setSources([]);
 
     try {
-      // For now, echo a placeholder response since Anthropic API key isn't set up yet
-      // This will be replaced with real API call in Step 5
-      const res = await api.post(`/agents/${agent.id}/chat`, { message: userMsg });
-      setMessages((prev) => [...prev, { role: 'assistant', content: res.data.reply }]);
+      const payload: Record<string, unknown> = { message: userMsg };
+      if (conversationId) payload.conversation_id = conversationId;
+
+      const res = await api.post(`/agents/${agent.id}/chat`, payload);
+
+      setConversationId(res.data.conversation_id);
+      setSources(res.data.sources || []);
+
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: res.data.reply,
+        tokens: (res.data.input_tokens || 0) + (res.data.output_tokens || 0),
+      }]);
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Agent belum bisa merespons. Setup Anthropic API key di .env dulu.';
+      const errorMsg = err.response?.data?.message || 'Gagal mengirim pesan. Cek API key dan konfigurasi agent.';
       setMessages((prev) => [...prev, { role: 'assistant', content: `⚠️ ${errorMsg}` }]);
     } finally {
       setIsTyping(false);
     }
   };
+
+  const totalTokens = messages.reduce((sum, m) => sum + (m.tokens || 0), 0);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 280px)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
@@ -441,15 +512,29 @@ function ChatTab({ agent, addToast }: { agent: AgentData; addToast: (t: 'success
         <div style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--accent-light)' }}>
           <span className="material-symbols-rounded" style={{ fontSize: 16, color: 'var(--accent)' }}>smart_toy</span>
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{agent.name}</div>
-          <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Sandbox Mode — pesan tidak dikirim ke WA</div>
+          <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+            Sandbox Mode — {agent.model_name}
+            {totalTokens > 0 && <span> • {totalTokens.toLocaleString()} tokens used</span>}
+          </div>
         </div>
-        {messages.length > 0 && (
-          <button onClick={() => setMessages([])} className="cm-btn cm-btn-ghost" style={{ marginLeft: 'auto', padding: '4px 10px', fontSize: 12 }}>
-            <span className="material-symbols-rounded" style={{ fontSize: 14 }}>refresh</span> Clear
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {sources.length > 0 && (
+            <div style={{ display: 'flex', gap: 4 }}>
+              {sources.map((s, i) => (
+                <span key={i} className="cm-badge cm-badge-agent" style={{ fontSize: 10, padding: '0 6px' }}>
+                  {s.type === 'faq' ? `${s.count} FAQ` : `${s.count} docs`}
+                </span>
+              ))}
+            </div>
+          )}
+          {messages.length > 0 && (
+            <button onClick={clearChat} className="cm-btn cm-btn-ghost" style={{ padding: '4px 10px', fontSize: 12 }}>
+              <span className="material-symbols-rounded" style={{ fontSize: 14 }}>refresh</span> New Chat
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
@@ -457,26 +542,39 @@ function ChatTab({ agent, addToast }: { agent: AgentData; addToast: (t: 'success
         {messages.length === 0 && (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'var(--text-tertiary)' }}>
             <span className="material-symbols-rounded" style={{ fontSize: 48, opacity: 0.3, marginBottom: 8 }}>forum</span>
-            <p style={{ fontSize: 14 }}>Mulai chat untuk test agent ini</p>
+            <p style={{ fontSize: 14, marginBottom: 4 }}>Mulai chat untuk test agent ini</p>
+            <p style={{ fontSize: 12, opacity: 0.7 }}>Pesan tidak dikirim ke WA — hanya simulasi</p>
           </div>
         )}
         {messages.map((msg, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+          <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', gap: 8, alignItems: 'flex-end' }}>
+            {msg.role === 'assistant' && (
+              <div style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--accent-light)', flexShrink: 0 }}>
+                <span className="material-symbols-rounded" style={{ fontSize: 14, color: 'var(--accent)' }}>smart_toy</span>
+              </div>
+            )}
             <div style={{
-              maxWidth: '75%', padding: '10px 14px', borderRadius: 12, fontSize: 14, lineHeight: 1.5,
+              maxWidth: '75%', padding: '10px 14px', borderRadius: 12, fontSize: 14, lineHeight: 1.6,
               backgroundColor: msg.role === 'user' ? 'var(--accent)' : 'var(--bg-card)',
               color: msg.role === 'user' ? '#fff' : 'var(--text-primary)',
               border: msg.role === 'assistant' ? '1px solid var(--border)' : 'none',
-              whiteSpace: 'pre-wrap',
+              whiteSpace: 'pre-wrap', wordBreak: 'break-word',
             }}>
               {msg.content}
             </div>
           </div>
         ))}
         {isTyping && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-            <div style={{ padding: '10px 14px', borderRadius: 12, backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-tertiary)', fontSize: 14 }}>
-              <span style={{ animation: 'cm-pulse 1s infinite' }}>Mengetik...</span>
+          <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 8, alignItems: 'flex-end' }}>
+            <div style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--accent-light)', flexShrink: 0 }}>
+              <span className="material-symbols-rounded" style={{ fontSize: 14, color: 'var(--accent)' }}>smart_toy</span>
+            </div>
+            <div style={{ padding: '10px 14px', borderRadius: 12, backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--text-tertiary)', animation: 'cm-bounce 1.4s ease-in-out infinite', animationDelay: '0s' }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--text-tertiary)', animation: 'cm-bounce 1.4s ease-in-out infinite', animationDelay: '0.2s' }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--text-tertiary)', animation: 'cm-bounce 1.4s ease-in-out infinite', animationDelay: '0.4s' }} />
+              </div>
             </div>
           </div>
         )}
