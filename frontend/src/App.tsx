@@ -9,6 +9,8 @@ import UsersPage from '././pages/masters/UsersPage';
 import OrganizationsPage from '././pages/masters/OrganizationsPage';
 import WaChannelsPage from '././pages/masters/WaChannelsPage';
 import AccessRequestsPage from '././pages/masters/AccessRequestsPage';
+import AgentsListPage from '././pages/agents/AgentsListPage';
+import AgentConfigPage from '././pages/agents/AgentConfigPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,15 +38,16 @@ export default function App() {
               <Route path="/inbox" element={<Placeholder title="Inbox" icon="chat" />} />
               <Route path="/contacts" element={<Placeholder title="Contacts" icon="contacts" />} />
               <Route path="/campaigns" element={<Placeholder title="Campaigns" icon="campaign" />} />
-              <Route path="/agents" element={<Placeholder title="AI Agents" icon="smart_toy" />} />
               <Route path="/settings" element={<Placeholder title="Settings" icon="settings" />} />
 
-              {/* Masters — superadmin only */}
+              {/*Superadmin only */}
               <Route element={<ProtectedRoute minRole="superadmin" />}>
                 <Route path="/masters/users" element={<UsersPage />} />
                 <Route path="/masters/organizations" element={<OrganizationsPage />} />
                 <Route path="/masters/wa-channels" element={<WaChannelsPage />} />
                 <Route path="/masters/access-requests" element={<AccessRequestsPage />} />
+                <Route path="/agents" element={<AgentsListPage />} />
+                <Route path="/agents/:id" element={<AgentConfigPage />} />
               </Route>
             </Route>
           </Route>
