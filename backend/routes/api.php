@@ -6,6 +6,9 @@ use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\WaChannelController;
 use App\Http\Controllers\Api\AccessRequestController;
+use App\Http\Controllers\Api\AgentController;
+use App\Http\Controllers\Api\AgentFaqController;
+use App\Http\Controllers\Api\AgentDocumentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -20,24 +23,18 @@ Route::prefix('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Public Lookups (for Register page — no auth required)
+| Public Lookups (for Register page)
 |--------------------------------------------------------------------------
 */
 Route::get('/public/organizations', function () {
     return \App\Models\Organization::select('id', 'name')
-        ->where('is_active', true)
-        ->orderBy('name')
-        ->get();
+        ->where('is_active', true)->orderBy('name')->get();
 });
 
 Route::get('/public/departments', function (\Illuminate\Http\Request $request) {
     $query = \App\Models\Department::select('id', 'organization_id', 'name', 'city')
         ->where('is_active', true);
-
-    if ($request->filled('organization_id')) {
-        $query->where('organization_id', $request->organization_id);
-    }
-
+    if ($request->filled('organization_id')) $query->where('organization_id', $request->organization_id);
     return $query->orderBy('name')->get();
 });
 
@@ -82,6 +79,25 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/access-requests/{access_request}/reject', [AccessRequestController::class, 'reject']);
         Route::delete('/access-requests/{access_request}', [AccessRequestController::class, 'destroy']);
 
+        // ──────────────────────────────────────
+        // AI Agents
+        // ──────────────────────────────────────
+        Route::get('/agents/lookup', [AgentController::class, 'lookup']);
+        Route::apiResource('agents', AgentController::class);
+        Route::get('/agents/{agent}/knowledge-summary', [AgentController::class, 'knowledgeSummary']);
+
+        // Agent FAQs
+        Route::get('/agents/{agent}/faqs', [AgentFaqController::class, 'index']);
+        Route::post('/agents/{agent}/faqs', [AgentFaqController::class, 'store']);
+        Route::put('/agents/{agent}/faqs/{faq}', [AgentFaqController::class, 'update']);
+        Route::delete('/agents/{agent}/faqs/{faq}', [AgentFaqController::class, 'destroy']);
+
+        // Agent Documents
+        Route::get('/agents/{agent}/documents', [AgentDocumentController::class, 'index']);
+        Route::post('/agents/{agent}/documents', [AgentDocumentController::class, 'store']);
+        Route::post('/agents/{agent}/documents/{document}/reprocess', [AgentDocumentController::class, 'reprocess']);
+        Route::delete('/agents/{agent}/documents/{document}', [AgentDocumentController::class, 'destroy']);
+
     });
 
     // ──────────────────────────────────────
@@ -89,27 +105,18 @@ Route::middleware('auth:sanctum')->group(function () {
     // ──────────────────────────────────────
     Route::get('/lookup/organizations', function () {
         return \App\Models\Organization::select('id', 'name', 'slug')
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+            ->where('is_active', true)->orderBy('name')->get();
     });
 
     Route::get('/lookup/departments', function (\Illuminate\Http\Request $request) {
         $query = \App\Models\Department::select('id', 'organization_id', 'name', 'city')
             ->where('is_active', true);
-
-        if ($request->filled('organization_id')) {
-            $query->where('organization_id', $request->organization_id);
-        }
-
+        if ($request->filled('organization_id')) $query->where('organization_id', $request->organization_id);
         return $query->orderBy('name')->get();
     });
 
     Route::get('/lookup/cities', function () {
         return \App\Models\User::whereNotNull('city')
-            ->where('city', '!=', '')
-            ->distinct()
-            ->orderBy('city')
-            ->pluck('city');
+            ->where('city', '!=', '')->distinct()->orderBy('city')->pluck('city');
     });
 });
