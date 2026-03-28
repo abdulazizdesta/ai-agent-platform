@@ -456,17 +456,55 @@ function KnowledgeTab({ agent, stats, addToast }: { agent: AgentData; stats: Kno
 // CHAT TAB (Sandbox Preview)
 // ═══════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════
+// CHAT TAB — FULL REPLACE
+// Replace the entire ChatTab function in AgentConfigPage.tsx
+// ═══════════════════════════════════════════════════════════
+
 function ChatTab({ agent, addToast }: { agent: AgentData; addToast: (t: 'success' | 'error' | 'warning', m: string) => void }) {
   const [messages, setMessages] = useState<{ role: string; content: string; tokens?: number }[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [sources, setSources] = useState<{ type: string; count: number }[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
+  // Load last conversation on mount
+  useEffect(() => {
+    setIsLoadingHistory(true);
+    api.get(`/agents/${agent.id}/conversations`)
+      .then((res) => {
+        const convs = res.data.conversations || [];
+        if (convs.length > 0) {
+          const lastConv = convs[0];
+          setConversationId(lastConv.id);
+          return api.get(`/agents/${agent.id}/conversations/${lastConv.id}/messages`);
+        }
+        return null;
+      })
+      .then((res) => {
+        if (res?.data?.messages) {
+          setMessages(res.data.messages
+            .filter((m: any) => m.role !== 'system')
+            .map((m: any) => ({
+              role: m.role,
+              content: m.content,
+              tokens: (m.input_tokens || 0) + (m.output_tokens || 0),
+            }))
+          );
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingHistory(false));
+  }, [agent.id]);
+
   const clearChat = () => {
+    if (conversationId) {
+      api.delete(`/agents/${agent.id}/conversations/${conversationId}`).catch(() => {});
+    }
     setMessages([]);
     setConversationId(null);
     setSources([]);
@@ -529,7 +567,7 @@ function ChatTab({ agent, addToast }: { agent: AgentData; addToast: (t: 'success
               ))}
             </div>
           )}
-          {messages.length > 0 && (
+          {messages.length > 0 && !isLoadingHistory && (
             <button onClick={clearChat} className="cm-btn cm-btn-ghost" style={{ padding: '4px 10px', fontSize: 12 }}>
               <span className="material-symbols-rounded" style={{ fontSize: 14 }}>refresh</span> New Chat
             </button>
@@ -537,16 +575,53 @@ function ChatTab({ agent, addToast }: { agent: AgentData; addToast: (t: 'success
         </div>
       </div>
 
-      {/* Messages */}
+      {/* Messages Area */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, backgroundColor: 'var(--bg-primary)' }}>
-        {messages.length === 0 && (
+
+        {/* Loading History Animation */}
+        {isLoadingHistory && (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+            {/* Animated chat skeleton */}
+            <div style={{ width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {/* Skeleton bubble left */}
+              <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: 'var(--border)', animation: 'cm-skeleton-pulse 1.5s ease-in-out infinite' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ width: 180, height: 14, borderRadius: 7, backgroundColor: 'var(--border)', animation: 'cm-skeleton-pulse 1.5s ease-in-out infinite', animationDelay: '0.1s' }} />
+                  <div style={{ width: 120, height: 14, borderRadius: 7, backgroundColor: 'var(--border)', animation: 'cm-skeleton-pulse 1.5s ease-in-out infinite', animationDelay: '0.2s' }} />
+                </div>
+              </div>
+              {/* Skeleton bubble right */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+                  <div style={{ width: 140, height: 14, borderRadius: 7, backgroundColor: 'var(--accent)', opacity: 0.15, animation: 'cm-skeleton-pulse 1.5s ease-in-out infinite', animationDelay: '0.3s' }} />
+                </div>
+              </div>
+              {/* Skeleton bubble left longer */}
+              <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: 'var(--border)', animation: 'cm-skeleton-pulse 1.5s ease-in-out infinite', animationDelay: '0.4s' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ width: 220, height: 14, borderRadius: 7, backgroundColor: 'var(--border)', animation: 'cm-skeleton-pulse 1.5s ease-in-out infinite', animationDelay: '0.5s' }} />
+                  <div style={{ width: 160, height: 14, borderRadius: 7, backgroundColor: 'var(--border)', animation: 'cm-skeleton-pulse 1.5s ease-in-out infinite', animationDelay: '0.6s' }} />
+                  <div style={{ width: 100, height: 14, borderRadius: 7, backgroundColor: 'var(--border)', animation: 'cm-skeleton-pulse 1.5s ease-in-out infinite', animationDelay: '0.7s' }} />
+                </div>
+              </div>
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', animation: 'cm-skeleton-pulse 1.5s ease-in-out infinite' }}>Memuat riwayat chat...</p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoadingHistory && messages.length === 0 && (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'var(--text-tertiary)' }}>
             <span className="material-symbols-rounded" style={{ fontSize: 48, opacity: 0.3, marginBottom: 8 }}>forum</span>
             <p style={{ fontSize: 14, marginBottom: 4 }}>Mulai chat untuk test agent ini</p>
             <p style={{ fontSize: 12, opacity: 0.7 }}>Pesan tidak dikirim ke WA — hanya simulasi</p>
           </div>
         )}
-        {messages.map((msg, i) => (
+
+        {/* Messages */}
+        {!isLoadingHistory && messages.map((msg, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', gap: 8, alignItems: 'flex-end' }}>
             {msg.role === 'assistant' && (
               <div style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--accent-light)', flexShrink: 0 }}>
@@ -564,6 +639,8 @@ function ChatTab({ agent, addToast }: { agent: AgentData; addToast: (t: 'success
             </div>
           </div>
         ))}
+
+        {/* Typing indicator */}
         {isTyping && (
           <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 8, alignItems: 'flex-end' }}>
             <div style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--accent-light)', flexShrink: 0 }}>
@@ -587,8 +664,8 @@ function ChatTab({ agent, addToast }: { agent: AgentData; addToast: (t: 'success
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
           className="cm-modal-input" style={{ flex: 1 }}
           placeholder="Ketik pesan untuk test agent..."
-          disabled={isTyping} />
-        <button onClick={sendMessage} disabled={!input.trim() || isTyping} className="cm-btn cm-btn-primary" style={{ padding: '8px 16px' }}>
+          disabled={isTyping || isLoadingHistory} />
+        <button onClick={sendMessage} disabled={!input.trim() || isTyping || isLoadingHistory} className="cm-btn cm-btn-primary" style={{ padding: '8px 16px' }}>
           <span className="material-symbols-rounded" style={{ fontSize: 18 }}>send</span>
         </button>
       </div>

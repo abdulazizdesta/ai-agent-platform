@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agent;
+use App\Models\WaChannel;
 use App\Services\KnowledgeRetrievalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -74,6 +75,9 @@ class AgentController extends Controller
         $validated['status'] = $validated['status'] ?? 'draft';
 
         $agent = Agent::create($validated);
+        if (!empty($validated['wa_channel_id'])) {
+            WaChannel::where('id', $validated['wa_channel_id'])->update(['agent_id' => $agent->id]);
+        }
         $agent->load(['organization:id,name', 'waChannel:id,phone_number,display_name']);
 
         return response()->json([
@@ -121,6 +125,12 @@ class AgentController extends Controller
         ]);
 
         $agent->update($validated);
+        if (array_key_exists('wa_channel_id', $validated)) {
+            WaChannel::where('agent_id', $agent->id)->update(['agent_id' => null]);
+            if ($validated['wa_channel_id']) {
+                WaChannel::where('id', $validated['wa_channel_id'])->update(['agent_id' => $agent->id]);
+            }
+        }
         $agent->load(['organization:id,name', 'waChannel:id,phone_number,display_name']);
 
         return response()->json([

@@ -10,7 +10,17 @@ use App\Http\Controllers\Api\AgentController;
 use App\Http\Controllers\Api\AgentFaqController;
 use App\Http\Controllers\Api\AgentDocumentController;
 use App\Http\Controllers\Api\AgentChatController;
+use App\Http\Controllers\Api\WebhookController;
+use App\Http\Controllers\Api\InboxController;
 use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Webhook Routes (Public — no auth, Fonnte hits this)
+|--------------------------------------------------------------------------
+*/
+Route::match(['get', 'post'], '/webhook/whatsapp/{channelId}', [WebhookController::class, 'handleFonnte'])
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
 
 /*
 |--------------------------------------------------------------------------
@@ -53,6 +63,20 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ──────────────────────────────────────
+    // Inbox (semua authenticated users — filter by role di frontend)
+    // ──────────────────────────────────────
+    Route::prefix('inbox')->group(function () {
+        Route::get('/stats', [InboxController::class, 'stats']);
+        Route::get('/conversations', [InboxController::class, 'conversations']);
+        Route::get('/conversations/{conversation}/messages', [InboxController::class, 'messages']);
+        Route::post('/conversations/{conversation}/reply', [InboxController::class, 'reply']);
+        Route::post('/conversations/{conversation}/takeover', [InboxController::class, 'takeover']);
+        Route::post('/conversations/{conversation}/return-to-ai', [InboxController::class, 'returnToAi']);
+        Route::post('/conversations/{conversation}/close', [InboxController::class, 'close']);
+        Route::delete('/conversations/{conversation}', [InboxController::class, 'destroy']);
+    });
+
+    // ──────────────────────────────────────
     // Masters Data — Superadmin Only
     // ──────────────────────────────────────
     Route::middleware('superadmin')->group(function () {
@@ -80,9 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/access-requests/{access_request}/reject', [AccessRequestController::class, 'reject']);
         Route::delete('/access-requests/{access_request}', [AccessRequestController::class, 'destroy']);
 
-        // ──────────────────────────────────────
         // AI Agents
-        // ──────────────────────────────────────
         Route::get('/agents/lookup', [AgentController::class, 'lookup']);
         Route::apiResource('agents', AgentController::class);
         Route::get('/agents/{agent}/knowledge-summary', [AgentController::class, 'knowledgeSummary']);

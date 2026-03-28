@@ -11,6 +11,7 @@ import WaChannelsPage from '././pages/masters/WaChannelsPage';
 import AccessRequestsPage from '././pages/masters/AccessRequestsPage';
 import AgentsListPage from '././pages/agents/AgentsListPage';
 import AgentConfigPage from '././pages/agents/AgentConfigPage';
+import InboxPage from '././pages/inbox/InboxPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,7 +36,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/inbox" element={<Placeholder title="Inbox" icon="chat" />} />
+              <Route path="/inbox" element={<InboxPage />} />
               <Route path="/contacts" element={<Placeholder title="Contacts" icon="contacts" />} />
               <Route path="/campaigns" element={<Placeholder title="Campaigns" icon="campaign" />} />
               <Route path="/settings" element={<Placeholder title="Settings" icon="settings" />} />
