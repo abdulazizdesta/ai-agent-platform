@@ -1,20 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useRequestAccess } from '../../hooks/useAuth';
+import api from '../../services/api';
 
-const organizations = [
-  { id: 1, name: 'PT Maju Jaya' },
-];
-
-const departments = [
-  { id: 1, name: 'Customer Service', org_id: 1 },
-  { id: 2, name: 'Sales', org_id: 1 },
-  { id: 3, name: 'HR', org_id: 1 },
-  { id: 4, name: 'Marketing', org_id: 1 },
-];
+interface LookupItem {
+  id: number;
+  name: string;
+  organization_id?: number;
+  city?: string;
+}
 
 export default function RegisterPage() {
-  const { mutate: requestAccess, isPending, isSuccess, data, error } = useRequestAccess();
+  const { mutate: requestAccess, isPending, isSuccess, error } = useRequestAccess();
+
+  const [organizations, setOrganizations] = useState<LookupItem[]>([]);
+  const [departments, setDepartments] = useState<LookupItem[]>([]);
+  const [loadingOrgs, setLoadingOrgs] = useState(true);
+
   const [form, setForm] = useState({
     name: '',
     username: '',
@@ -25,21 +27,40 @@ export default function RegisterPage() {
     password_confirmation: '',
     organization_id: 0,
     department_id: 0,
+    city: '',
   });
+
+  // Fetch organizations on mount (public endpoint, no auth)
+  useEffect(() => {
+    api.get('/public/organizations')
+      .then((res) => setOrganizations(res.data))
+      .catch(() => {})
+      .finally(() => setLoadingOrgs(false));
+  }, []);
+
+  // Fetch departments when org changes
+  useEffect(() => {
+    if (form.organization_id > 0) {
+      api.get('/public/departments', { params: { organization_id: form.organization_id } })
+        .then((res) => setDepartments(res.data))
+        .catch(() => setDepartments([]));
+    } else {
+      setDepartments([]);
+    }
+  }, [form.organization_id]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    requestAccess(form);
+    requestAccess({
+      ...form,
+      city: form.city || undefined,
+    } as any);
   };
 
   const apiError = error?.response?.data as {
     message?: string;
     errors?: Record<string, string[]>;
   } | undefined;
-
-  const filteredDepts = departments.filter(
-    (d) => d.org_id === form.organization_id
-  );
 
   if (isSuccess) {
     return (
@@ -215,8 +236,11 @@ export default function RegisterPage() {
                       department_id: 0,
                     })}
                     className="input input-icon appearance-none"
+                    disabled={loadingOrgs}
                   >
-                    <option value={0} disabled>Select org</option>
+                    <option value={0} disabled>
+                      {loadingOrgs ? 'Loading...' : 'Select org'}
+                    </option>
                     {organizations.map((org) => (
                       <option key={org.id} value={org.id}>{org.name}</option>
                     ))}
@@ -239,11 +263,30 @@ export default function RegisterPage() {
                     <option value={0} disabled>
                       {form.organization_id === 0 ? 'Select org first' : 'Select dept'}
                     </option>
-                    {filteredDepts.map((dept) => (
-                      <option key={dept.id} value={dept.id}>{dept.name}</option>
+                    {departments.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name}{dept.city ? ` (${dept.city})` : ''}
+                      </option>
                     ))}
                   </select>
                 </div>
+              </div>
+            </div>
+
+            {/* City / Branch */}
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-primary">
+                Kota / Cabang <span className="font-normal text-secondary">(optional)</span>
+              </label>
+              <div className="input-wrapper">
+                <span className="input-icon-left material-symbols-rounded">location_city</span>
+                <input
+                  type="text"
+                  value={form.city}
+                  onChange={(e) => setForm({ ...form, city: e.target.value })}
+                  className="input input-icon"
+                  placeholder="Surabaya"
+                />
               </div>
             </div>
 

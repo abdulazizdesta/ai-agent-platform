@@ -12,7 +12,6 @@ class AccessRequestController extends Controller
 {
     /**
      * GET /api/access-requests
-     * Eager load org + dept + reviewer to prevent N+1.
      */
     public function index(Request $request): JsonResponse
     {
@@ -79,6 +78,7 @@ class AccessRequestController extends Controller
 
     /**
      * POST /api/access-requests/{accessRequest}/approve
+     * City sudah dari registrasi, superadmin cuma assign role.
      */
     public function approve(Request $request, AccessRequest $accessRequest): JsonResponse
     {
@@ -97,18 +97,10 @@ class AccessRequestController extends Controller
 
         $validated = $request->validate([
             'assigned_role' => ['required', Rule::in(['admin', 'agent', 'viewer'])],
-            'city'          => ['nullable', 'string', 'max:255'],
         ]);
 
         $reviewer = $request->user();
-
-        // Use the approve method from AccessRequest model
         $user = $accessRequest->approve($reviewer, $validated['assigned_role']);
-
-        // Update city if provided
-        if (!empty($validated['city'])) {
-            $user->update(['city' => $validated['city']]);
-        }
 
         return response()->json([
             'message' => "Request dari {$accessRequest->name} berhasil di-approve sebagai {$validated['assigned_role']}.",
@@ -141,7 +133,6 @@ class AccessRequestController extends Controller
 
     /**
      * DELETE /api/access-requests/{accessRequest}
-     * Only delete expired/rejected requests.
      */
     public function destroy(AccessRequest $accessRequest): JsonResponse
     {

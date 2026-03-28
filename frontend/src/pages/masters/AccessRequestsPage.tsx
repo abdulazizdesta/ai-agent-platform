@@ -9,7 +9,7 @@ const ASSIGNABLE_ROLES = ['admin', 'agent', 'viewer'];
 // ─── Types ───────────────────────────────────────────────
 interface AccessRequestData {
   id: number; name: string; username: string; employee_id: string;
-  phone: string | null; email: string | null;
+  phone: string | null; email: string | null; city: string | null;
   organization: { id: number; name: string } | null;
   department: { id: number; name: string } | null;
   status: string; assigned_role: string | null;
@@ -178,14 +178,14 @@ export default function AccessRequestsPage() {
         <table className="cm-table">
           <thead><tr>
             <th>Nama</th><th>Username</th><th>Employee ID</th><th>Telepon</th>
-            <th>Organisasi</th><th>Departemen</th><th>Status</th>
+            <th>Kota</th><th>Organisasi</th><th>Departemen</th><th>Status</th>
             <th>Submitted</th><th>Expires</th><th>Aksi</th>
           </tr></thead>
           <tbody>
             {requestsQuery.isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (<tr key={i}>{Array.from({ length: 10 }).map((_, j) => (<td key={j}><div className="cm-skeleton" /></td>))}</tr>))
+              Array.from({ length: 3 }).map((_, i) => (<tr key={i}>{Array.from({ length: 11 }).map((_, j) => (<td key={j}><div className="cm-skeleton" /></td>))}</tr>))
             ) : requests.length === 0 ? (
-              <tr><td colSpan={10} style={{ textAlign: 'center', padding: 48, color: 'var(--text-secondary)' }}>
+              <tr><td colSpan={11} style={{ textAlign: 'center', padding: 48, color: 'var(--text-secondary)' }}>
                 <span className="material-symbols-rounded" style={{ fontSize: 48, display: 'block', marginBottom: 8, opacity: 0.3 }}>how_to_reg</span>
                 Tidak ada access request.
               </td></tr>
@@ -200,6 +200,7 @@ export default function AccessRequestsPage() {
                   <td>{req.username}</td>
                   <td style={{ fontFamily: 'monospace', fontSize: 13 }}>{req.employee_id}</td>
                   <td>{req.phone || '—'}</td>
+                  <td>{req.city || '—'}</td>
                   <td>{req.organization?.name || '—'}</td>
                   <td>{req.department?.name || '—'}</td>
                   <td>
@@ -272,7 +273,6 @@ function ReviewModal({ request, onClose, onApprove, onReject, isLoading }: {
   isLoading: boolean;
 }) {
   const [assignedRole, setAssignedRole] = useState('viewer');
-  const [city, setCity] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [mode, setMode] = useState<'review' | 'rejecting'>('review');
 
@@ -303,6 +303,7 @@ function ReviewModal({ request, onClose, onApprove, onReject, isLoading }: {
             <InfoRow label="Employee ID" value={request.employee_id} mono />
             <InfoRow label="Telepon" value={request.phone || '—'} />
             <InfoRow label="Email" value={request.email || '—'} />
+            <InfoRow label="Kota / Cabang" value={request.city || '—'} />
             <InfoRow label="Organisasi" value={request.organization?.name || '—'} />
             <InfoRow label="Departemen" value={request.department?.name || '—'} />
             <InfoRow label="Submitted" value={new Date(request.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} />
@@ -311,15 +312,12 @@ function ReviewModal({ request, onClose, onApprove, onReject, isLoading }: {
 
         {mode === 'review' ? (
           <>
-            {/* Assign Role + City */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {/* Assign Role */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
               <FormField label="Assign Role *">
                 <select value={assignedRole} onChange={(e) => setAssignedRole(e.target.value)} className="cm-modal-input">
                   {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
-              </FormField>
-              <FormField label="Assign Kota / Cabang">
-                <input value={city} onChange={(e) => setCity(e.target.value)} className="cm-modal-input" placeholder="Optional" autoComplete="off" />
               </FormField>
             </div>
 
@@ -331,7 +329,7 @@ function ReviewModal({ request, onClose, onApprove, onReject, isLoading }: {
               </button>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={onClose} className="cm-btn cm-btn-ghost">Batal</button>
-                <button onClick={() => onApprove({ assigned_role: assignedRole, city: city || null })} className="cm-btn cm-btn-primary" disabled={isLoading}>
+                <button onClick={() => onApprove({ assigned_role: assignedRole })} className="cm-btn cm-btn-primary" disabled={isLoading}>
                   <span className="material-symbols-rounded" style={{ fontSize: 18 }}>check</span>
                   {isLoading ? 'Memproses...' : 'Approve'}
                 </button>

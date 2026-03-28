@@ -22,6 +22,7 @@ class RequestAccessRequest extends FormRequest
             'password'        => ['required', 'string', 'min:8', 'confirmed'],
             'organization_id' => ['required', 'exists:organizations,id'],
             'department_id'   => ['nullable', 'exists:departments,id'],
+            'city'            => ['nullable', 'string', 'max:255'],
         ];
     }
 

@@ -20,6 +20,29 @@ Route::prefix('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Public Lookups (for Register page — no auth required)
+|--------------------------------------------------------------------------
+*/
+Route::get('/public/organizations', function () {
+    return \App\Models\Organization::select('id', 'name')
+        ->where('is_active', true)
+        ->orderBy('name')
+        ->get();
+});
+
+Route::get('/public/departments', function (\Illuminate\Http\Request $request) {
+    $query = \App\Models\Department::select('id', 'organization_id', 'name', 'city')
+        ->where('is_active', true);
+
+    if ($request->filled('organization_id')) {
+        $query->where('organization_id', $request->organization_id);
+    }
+
+    return $query->orderBy('name')->get();
+});
+
+/*
+|--------------------------------------------------------------------------
 | Authenticated Routes
 |--------------------------------------------------------------------------
 */
