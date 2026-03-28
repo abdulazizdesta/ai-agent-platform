@@ -5,7 +5,8 @@ import DashboardLayout from './components/layout/DashboardLayout';
 import LoginPage from '././pages/auth/LoginPage';
 import RegisterPage from '././pages/auth/RegisterPage';
 import DashboardPage from '././pages/dashboard/DashboardPage';
-import UsersPage from './pages/masters/users/UsersPage';
+import UsersPage from '././pages/masters/UsersPage';
+import OrganizationsPage from '././pages/masters/OrganizationsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +40,7 @@ export default function App() {
               {/* Masters — superadmin only */}
               <Route element={<ProtectedRoute minRole="superadmin" />}>
                 <Route path="/masters/users" element={<UsersPage />} />
+                <Route path="/masters/organizations" element={<OrganizationsPage />} />
               </Route>
             </Route>
           </Route>

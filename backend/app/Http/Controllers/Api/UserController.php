@@ -82,7 +82,7 @@ class UserController extends Controller
             'email'           => ['nullable', 'email', 'max:255'],
             'phone'           => ['nullable', 'string', 'max:20'],
             'city'            => ['nullable', 'string', 'max:255'],
-            'role'            => ['required', Rule::in(['admin', 'agent', 'viewer'])],
+            'role'            => ['required', Rule::in(['superadmin','admin', 'agent', 'viewer'])],
             'organization_id' => ['required', 'exists:organizations,id'],
             'department_id'   => ['nullable', 'exists:departments,id'],
         ]);
@@ -125,7 +125,7 @@ class UserController extends Controller
             'email'           => ['nullable', 'email', 'max:255'],
             'phone'           => ['nullable', 'string', 'max:20'],
             'city'            => ['nullable', 'string', 'max:255'],
-            'role'            => ['sometimes', Rule::in(['admin', 'agent', 'viewer'])],
+            'role'            => ['sometimes', Rule::in(['superadmin','admin', 'agent', 'viewer'])],
             'status'          => ['sometimes', Rule::in(['approved', 'suspended'])],
             'organization_id' => ['sometimes', 'exists:organizations,id'],
             'department_id'   => ['nullable', 'exists:departments,id'],
