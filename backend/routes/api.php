@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\DepartmentController;
+use App\Http\Controllers\Api\WaChannelController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -44,6 +45,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Departments
         Route::apiResource('departments', DepartmentController::class);
+
+        // WA Channels
+        Route::apiResource('wa-channels', WaChannelController::class);
+        Route::post('/wa-channels/{wa_channel}/re-verify', [WaChannelController::class, 'reVerify']);
+        Route::post('/wa-channels/{wa_channel}/update-credentials', [WaChannelController::class, 'updateCredentials']);
 
     });
 

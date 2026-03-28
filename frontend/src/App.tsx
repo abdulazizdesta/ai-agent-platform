@@ -7,6 +7,7 @@ import RegisterPage from '././pages/auth/RegisterPage';
 import DashboardPage from '././pages/dashboard/DashboardPage';
 import UsersPage from '././pages/masters/UsersPage';
 import OrganizationsPage from '././pages/masters/OrganizationsPage';
+import WaChannelsPage from '././pages/masters/WaChannelsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +42,7 @@ export default function App() {
               <Route element={<ProtectedRoute minRole="superadmin" />}>
                 <Route path="/masters/users" element={<UsersPage />} />
                 <Route path="/masters/organizations" element={<OrganizationsPage />} />
+                <Route path="/masters/wa-channels" element={<WaChannelsPage />} />
               </Route>
             </Route>
           </Route>
