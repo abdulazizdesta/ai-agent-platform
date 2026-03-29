@@ -69,7 +69,7 @@ class InboxController extends Controller
     {
         $messages = $conversation->messages()
             ->select('id', 'wa_conversation_id', 'direction', 'sender_type', 'content', 'message_type', 'media_url', 'status', 'model_used', 'created_at')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('created_at', 'asc')
             ->paginate(min((int) $request->get('per_page', 50), 200));
 
         // Mark as read

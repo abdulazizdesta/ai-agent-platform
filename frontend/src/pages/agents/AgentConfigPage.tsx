@@ -21,8 +21,8 @@ interface ToastData { id: number; type: 'success' | 'error' | 'warning'; message
 let toastId = 0;
 
 const PROVIDERS = [
-  { value: 'anthropic', label: 'Anthropic (Claude)', icon: '🟣' },
-  { value: 'gemini', label: 'Google (Gemini)', icon: '🔵' },
+  { value: 'anthropic', label: 'Anthropic (Claude)' },
+  { value: 'gemini', label: 'Google (Gemini)' },
 ];
  
 const MODELS_BY_PROVIDER: Record<string, { value: string; label: string; free: boolean }[]> = {
@@ -240,8 +240,15 @@ function ConfigTab({ agent, waChannels, addToast }: { agent: AgentData; waChanne
                     setForm((f) => ({ ...f, model_provider: p.value, model_name: firstModel }));
                   }}
                   className={`cm-btn ${form.model_provider === p.value ? 'cm-btn-primary' : 'cm-btn-ghost'}`}
-                  style={{ flex: 1, justifyContent: 'center', fontSize: 13 }}>
-                  <span style={{ fontSize: 14 }}>{p.icon}</span> {p.label}
+                  style={{ flex: 1, justifyContent: 'center', fontSize: 13, gap: 8 }}>
+
+                  {/* Provider Logo */}
+                  {p.value === 'anthropic' ? (
+                    <img src="https://cdn.brandfetch.io/anthropic.com/w/28/h/28" width={16} height={16} alt="" style={{ borderRadius: 3 }} />
+                  ) : (
+                    <img src="https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg" width={16} height={16} alt="" />
+                  )}
+                  {p.label}
                 </button>
               ))}
             </div>

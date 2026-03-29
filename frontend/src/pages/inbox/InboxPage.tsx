@@ -239,7 +239,7 @@ function ChatDetail({ conversation, addToast, onRefresh, onDeleted }: {
     refetchInterval: 5000,
   });
 
-  const messages = [...(messagesQuery.data?.data || [])].reverse();
+  const messages = messagesQuery.data?.data || [];
 
         // Auto-scroll ke bawah
         const prevCountRef = useRef(0);
