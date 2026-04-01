@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller
 {
+    
     public function __construct(
         private FonnteService $fonnteService,
         private AIProviderFactory $aiFactory,
@@ -35,6 +36,12 @@ class WebhookController extends Controller
      */
     public function handleFonnte(Request $request, int $channelId): JsonResponse
     {
+        \Log::info('Webhook raw payload', [
+            'all' => $request->all(),
+            'headers' => $request->headers->all(),
+            'content' => $request->getContent(),
+        ]);
+    
         // 1. Find channel
         $channel = WaChannel::find($channelId);
 
