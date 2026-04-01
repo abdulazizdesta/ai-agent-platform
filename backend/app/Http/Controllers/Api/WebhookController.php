@@ -41,6 +41,14 @@ class WebhookController extends Controller
             'headers' => $request->headers->all(),
             'content' => $request->getContent(),
         ]);
+
+        \Log::info('Webhook extra debug', [
+            'query' => $request->query(),
+            'post' => $_POST,
+            'raw_php_input' => file_get_contents('php://input'),
+            'content_type' => $request->header('Content-Type'),
+            'method' => $request->method(),
+        ]);
     
         // 1. Find channel
         $channel = WaChannel::find($channelId);
